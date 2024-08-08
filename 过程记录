@@ -1,0 +1,233 @@
+@ 创建项目:[cra同时支持ts]
+create-react-app react_music --template typescript
+npm run start
+=> yarn
+
+@ 配置：
+·配置icon[react_music\public\favicon.ico]
+·配置标题[react_music\public\index.html]
+·配置项目别名:
+  1 eject[不推荐]
+  2 craco(create-reatc-app config)[antd]
+      install @craco/craco@alpha -D
+      craco.config.js
+          webpack: {
+              alias: {
+                '@': path.resolve(__dirname, 'src') // 约定：使用 @ 表示 src 文件所在路径
+              }
+          }
+      tsconfig.json
+          "paths": {
+              "@/*": [
+                "src/*"
+              ]
+          }
+      package.json
+          "start": "craco start",
+
+@ 代码规范:
+editconfig 维护一致的代码风格
+prettier 代码格式化
+eslint 格式错误提示
+
+@ 项目目录结构划分
+[按功能]
+assets  data/img/css
+components 公共组件
+hooks
+router
+service
+utils
+store
+views
+
+@ 重置css样式
+reset.less
+yarn add normalize.css
+yarn add craco-less@2.1.0-alpha.0
+    const CracoLessPlugin = require('craco-less')
+        plugins: [
+      {
+        plugin: CracoLessPlugin,
+        options: {
+          lessLoaderOptions: {
+            lessOptions: {
+              javascriptEnabled: true
+            }
+          }
+        }
+      }
+    ],
+
+@ 配置路由:
+react-router-dom
+/views 页面
+/index.js 搭路由表 
+一级路由
+路由懒加载 suspense
+二级路由 outlet suspense
+import { useRoutes } from 'react-router-dom'
+  <Suspense fallback="loading...">
+    <div className="main">{useRoutes(routes)}</div>
+  </Suspense>
+
+*快速生成代码模板
+snippet-generator
+首选项-配置用户代码片段-typescriptreact
+
+*对props进行类型约束
++ 直接约束
+    interface IProps{}
+    const xxx = (props:IProps)=>{}
+    不知道具体类型 
++ 泛型[推荐]
+    const xxx: React.FC<IProps> =(props)=>{}
+    可选类型
+
+@ 配置状态rdtk:
+yarn add @reduxjs/tookit react-redux
+/store
+/store/index.js 创建store
+
++ 配置store 
+configureStore
+provider
+
++ 创建Slice
+name
+initialState
+reducers
+
+*useSelector的类型问题 => state
+type RootState ReturnType
+export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
+useDispatch
+shallowEqual
+
+@ 发送请求
+yarn add axios
+环境变量
+api
+axios -> Request+TS -> 封装url -> store/slice/reducer -> 页面
+
+
+*styled-components第三方库类型声明
+npm i --save-dev @types/styled-components
+
+@ 搭建discover页面
++ app-header 
+yarn add styled-components
+yarn add antd
+定义组件内部的状态:NavLink有active状态
+
++ discover
+样式盒子里面再用个div
+    <DiscoverWrapper>
+      <div className="content wrap-v1">
+
++ discover/recommend/top-banner 轮播图
+@import '~antd/dist/antd.less' 且要在craco.config中配置
+yarn add @ant-design/icons
+
+* 动态添加类名 
+yarn add classnames
+import classNames from 'classnames'
+className={classNames('dots-item', { active: index === currentIndex })}
+
+* 注意使用tsx后缀
+
+* 为什么加display: flex可以将竖着的ul变为横向的?
+默认情况下，<ul> 元素是一个块级元素，其子元素垂直排列。但是，当你将 display: flex应用到<ul>元素上时，它的布局方式变为水平排列。
+
+- discover/recommend
+左右布局
+% 左：
+- discover/recommend/hot-recommend
+@ 封装一个可以复用的标题 components/area-header-v1 
+@ 封装一个可以复用的歌曲展示的 components/song-item-v1
+  先搭建框架 再放内容：
+  · 先查看api：https://neteasecloudmusicapi.js.org/#/?id=neteasecloudmusicapi
+  · 配置reducer：createAsyncThunk action dispatch
+  · 发起action获取数据
+  · 展示数据：useAppSelector拿数据 然后展示 这里封装一个单独组件 接收一个属性 把拿到的数据传到封装的组件中使用
+@ 封装处理数字的方法、处理图片大小的方法 utils
+- discover/recommend/new-album
+也是一个轮播图
+- discover/recommend/ranking
+· 三个榜单id
+
+*三个榜单数据管理方式：分开管理 / 统一管理(Promise.all)
+
+
+% 右：
+- discover/recommend/user-login
+对不齐 把wrap-v2缩小1px
+- discover/recommend/signed-artist
+- discover/recommend/hot-dj
+
+@ 歌曲播放
+
++ 当前歌曲
+store：currentSong
+appPlayerBar：currentSong
+当前歌曲的数据管理分层结构 放到一个store中进行管理
+
++ 歌曲播放的逻辑
+audio：audioRef
+播放和暂停
+// 获取当前音乐
+export function getPlayUrl(id: number) {
+  return `https://music.163.com/song/media/outer/url?id=${id}.mp3`
+}
+歌曲进度的监听
+
++ 歌曲的时间展示
+获取歌曲的播放时间和音乐总时长
+currentTime
+duration
+时间格式化
+
++ 歌曲的进度控制：
+<slider/>
+onAfterChange
+点击: audioRef.current.currentTime 
+拖拽: onChange
+来回拖的时候歌曲正常播放 process会反复横跳 所以只有在没有拖拽状态的时候去更新 松手后记得设置setIsSlider(false)
+
++ 歌词的请求和匹配
+获取当前歌曲 getSongDetail
+获取歌词 getLyric 先解析成一个个对象 lyics
+根据currentTime匹配歌词
+
++ 播放列表和模式
+定义两个属性保存列表：playSongList、playSongIndex
+播放某一个歌曲：列表中存在这个歌曲 =>
+               不存在 =>
+
+播放模式的记录：playMode/切换图标
+切换音乐
+- 上一首
+- 下一首
+
++ 细节修复：
+切换歌曲请求新的歌词
+歌曲播放完毕，自动切换下一首歌曲（单曲循环
+
+
++ 问题：数据加载延迟
+获取数据要先发起action 才能从store拿数据
+
+@ 其他页面
+@ 歌单 单曲 专辑 歌手
+
+
+
+
+
+
+
+
+
+
+
+
